@@ -1,12 +1,22 @@
 ﻿using Gma.System.MouseKeyHook;
 using Loamen.KeyMouseHook;
 using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 
 namespace ChopThatTree
 {
+
 	internal class Form1 : Form
 	{
+		[DllImport("user32.dll")]
+		private static extern IntPtr GetForegroundWindow();
+
+		[DllImport("user32.dll")]
+		private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+
 		private IKeyboardMouseEvents m_GlobalHook;
 		private Timer timer;
 		private bool chopThatStuff = false;
@@ -16,6 +26,7 @@ namespace ChopThatTree
 		{
 			this.Text = "ChopThatTree";
 		}
+
 		protected override void OnLoad(EventArgs e)
 		{
 			base.OnLoad(e);
@@ -37,6 +48,12 @@ namespace ChopThatTree
 
 		private void Timer_Tick(object sender, EventArgs e)
 		{
+			if (!this.InGame())
+			{
+				this.chopThatStuff = false;
+				this.UpdateBackColor();
+			}
+
 			if (this.chopThatStuff)
 			{
 				//this.inputsim.Mouse.LeftButtonClick();
@@ -52,23 +69,53 @@ namespace ChopThatTree
 			}
 		}
 
+		private bool InGame()
+		{
+			return this.GetCurrentWindowTitle() == "Roblox";
+		}
+
+		private string GetCurrentWindowTitle()
+		{
+			var handle = GetForegroundWindow();
+			var chars = 256;
+			var sb = new StringBuilder(chars);
+
+			if (GetWindowText(handle, sb, chars) > 0)
+			{
+				Debug.WriteLine(sb.ToString());
+				return sb.ToString();
+			}
+			return "";
+		}
+
 		private void GlobalHookMouseDownExt(object sender, MouseEventExtArgs e)
 		{
+			if (!this.InGame())
+			{
+				return;
+			}
+
 			if (e.IsMouseButtonDown && e.Button == MouseButtons.Middle)
 			{
 				this.chopThatStuff = !this.chopThatStuff;
 				this.inputsim.Mouse.LeftButtonUp();
-				this.BackColor = chopThatStuff ? System.Drawing.Color.Red : System.Drawing.Color.White;
+
+				this.UpdateBackColor();
 			}
+		}
+
+		private void UpdateBackColor()
+		{
+			this.BackColor = this.chopThatStuff ? System.Drawing.Color.Red : System.Drawing.Color.White;
 		}
 
 		protected override void Dispose(bool disposing)
 		{
-			timer.Stop();
+			this.timer.Stop();
 
 			if (disposing)
 			{
-				m_GlobalHook.Dispose();
+				this.m_GlobalHook.Dispose();
 			}
 			base.Dispose(disposing);
 		}
