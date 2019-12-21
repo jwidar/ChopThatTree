@@ -1,6 +1,7 @@
 ﻿using Gma.System.MouseKeyHook;
 using Loamen.KeyMouseHook;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -46,6 +47,16 @@ namespace ChopThatTree
 			this.inputsim = new InputSimulator();
 		}
 
+		protected override void OnClosing(CancelEventArgs e)
+		{
+			this.m_GlobalHook.MouseDownExt -= this.GlobalHookMouseDownExt;
+			this.m_GlobalHook.Dispose();
+
+			this.timer.Stop();
+
+			base.OnClosing(e);
+		}
+
 		private void Timer_Tick(object sender, EventArgs e)
 		{
 			if (!this.InGame())
@@ -75,7 +86,7 @@ namespace ChopThatTree
 		}
 
 		private string GetCurrentWindowTitle()
-		{
+		{			
 			var handle = GetForegroundWindow();
 			var chars = 256;
 			var sb = new StringBuilder(chars);
@@ -107,17 +118,6 @@ namespace ChopThatTree
 		private void UpdateBackColor()
 		{
 			this.BackColor = this.chopThatStuff ? System.Drawing.Color.Red : System.Drawing.Color.White;
-		}
-
-		protected override void Dispose(bool disposing)
-		{
-			this.timer.Stop();
-
-			if (disposing)
-			{
-				this.m_GlobalHook.Dispose();
-			}
-			base.Dispose(disposing);
 		}
 	}
 }
